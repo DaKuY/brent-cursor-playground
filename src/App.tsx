@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatPanel } from "./components/ChatPanel";
-import { TutorialProgress } from "./components/TutorialProgress";
+import { LandingScreen } from "./components/LandingScreen";
+import { SceneBackdrop } from "./components/SceneBackdrop";
+import { StepSlideshow } from "./components/StepSlideshow";
 import { TUTORIAL_STEPS } from "./data/tutorialSteps";
 import {
   createMessage,
@@ -13,19 +15,48 @@ import {
 } from "./lib/tutorialAssistant";
 import type { ChatMessage } from "./types";
 
+const SESSION_STARTED = "brent-playground-session-started";
+
 export default function App() {
   const { currentStep, tutorialComplete, totalSteps, advance, reset } =
     useTutorialProgress();
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    getWelcomeMessages().map((c) => createMessage("assistant", c)),
+  const [phase, setPhase] = useState<"landing" | "tutorial">(() =>
+    sessionStorage.getItem(SESSION_STARTED) ? "tutorial" : "landing",
   );
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scrollChat, setScrollChat] = useState(false);
+  const [slideStep, setSlideStep] = useState(currentStep);
+  const lastIntroStep = useRef(0);
 
   const stepData = useMemo(
     () => TUTORIAL_STEPS.find((s) => s.id === currentStep) ?? TUTORIAL_STEPS[0],
     [currentStep],
   );
+
+  const slideData = useMemo(
+    () => TUTORIAL_STEPS.find((s) => s.id === slideStep) ?? stepData,
+    [slideStep, stepData],
+  );
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [phase, currentStep]);
+
+  useEffect(() => {
+    if (phase !== "tutorial" || messages.length > 0) return;
+    if (!sessionStorage.getItem(SESSION_STARTED)) return;
+    const welcome = getWelcomeMessages().map((c) => createMessage("assistant", c));
+    const intro = getStepIntro(currentStep).map((c) => createMessage("assistant", c));
+    setMessages([...welcome, ...intro]);
+    lastIntroStep.current = currentStep;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- rehydrate once after refresh
+  }, []);
+
+  useEffect(() => {
+    setSlideStep(currentStep);
+  }, [currentStep]);
 
   const pushAssistant = useCallback((lines: string[]) => {
     setMessages((prev) => [
@@ -34,16 +65,28 @@ export default function App() {
     ]);
   }, []);
 
+  const beginTutorial = useCallback(() => {
+    sessionStorage.setItem(SESSION_STARTED, "1");
+    setPhase("tutorial");
+    const welcome = getWelcomeMessages().map((c) => createMessage("assistant", c));
+    const intro = getStepIntro(1).map((c) => createMessage("assistant", c));
+    setMessages([...welcome, ...intro]);
+    lastIntroStep.current = 1;
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
-    if (tutorialComplete) return;
+    if (phase !== "tutorial" || tutorialComplete) return;
+    if (lastIntroStep.current === currentStep) return;
+    lastIntroStep.current = currentStep;
     pushAssistant(getStepIntro(currentStep));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intro only when step index changes
-  }, [currentStep, tutorialComplete]);
+  }, [currentStep, tutorialComplete, phase, pushAssistant]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text || busy) return;
 
+    setScrollChat(true);
     setMessages((prev) => [...prev, createMessage("user", text)]);
     setInput("");
     setBusy(true);
@@ -68,81 +111,83 @@ export default function App() {
     }, 350);
   }, [input, busy, tutorialComplete, currentStep, advance]);
 
+  const handleReset = () => {
+    reset();
+    sessionStorage.removeItem(SESSION_STARTED);
+    setMessages([]);
+    setScrollChat(false);
+    setPhase("landing");
+    window.scrollTo(0, 0);
+  };
+
+  const handleSlidePrev = () => {
+    setSlideStep((s) => Math.max(1, s - 1));
+  };
+
+  const handleSlideNext = () => {
+    setSlideStep((s) => Math.min(totalSteps, s + 1));
+  };
+
   return (
-    <div className="app app-tutorial">
-      <header className="hero hero-compact">
-        <p className="eyebrow">Interactive tutorial</p>
-        <h1>Brent&apos;s Cursor Playground</h1>
-        <p className="subtitle">
-          {tutorialComplete
-            ? "You finished all 10 steps. Explore the commands again or reset for a fresh run."
-            : `Step ${currentStep} of ${totalSteps} — complete each task in the chat to unlock the next lesson.`}
-        </p>
-      </header>
+    <div className="app-shell">
+      <SceneBackdrop />
 
-      <div className="tutorial-layout">
-        <aside className="panel panel-side">
-          <TutorialProgress currentStep={currentStep} complete={tutorialComplete} />
-          {!tutorialComplete && (
-            <div className="step-card">
-              <h2>{stepData.title}</h2>
-              <p className="step-headline">{stepData.headline}</p>
-              <p className="step-lesson">{stepData.lesson}</p>
-              <p className="step-why">
-                <strong>Why Cursor:</strong> {stepData.cursorWhy}
-              </p>
-            </div>
-          )}
-          {tutorialComplete && (
-            <div className="step-card graduate">
-              <h2>What to do next</h2>
-              <ul>
-                <li>
-                  Download Cursor at{" "}
-                  <a href="https://cursor.com" target="_blank" rel="noreferrer">
-                    cursor.com
-                  </a>
-                </li>
-                <li>Open a personal project and give Agent one small task</li>
-                <li>Add project rules so suggestions match your style</li>
-              </ul>
-              <button type="button" className="reset-btn" onClick={() => {
-                reset();
-                setMessages(
-                  getWelcomeMessages().map((c) => createMessage("assistant", c)),
-                );
-              }}>
-                Restart tutorial
-              </button>
-            </div>
-          )}
-        </aside>
-
-        <main className="panel panel-chat">
-          <div className="chat-header">
-            <h2>Cursor command lab</h2>
-            <p>Type messages or slash commands — this simulates Chat &amp; Agent on desktop.</p>
-          </div>
-          <ChatPanel
-            messages={messages}
-            input={input}
-            onInputChange={setInput}
-            onSend={handleSend}
-            disabled={busy}
-            placeholder={
-              tutorialComplete
-                ? "Tutorial complete — try /help or restart from the sidebar"
-                : "Try /help, /chat, @App.tsx, /agent …"
-            }
-          />
-          {!tutorialComplete && (
-            <p className="chat-footnote">
-              Demo AI runs in your browser only. On desktop Cursor, the same prompts reach
-              real models with your repo context.
+      {phase === "landing" ? (
+        <LandingScreen onStart={beginTutorial} />
+      ) : (
+        <div className="tutorial-mobile">
+          <header className="top-bar">
+            <p className="top-title mc-pixel">Tremor × Cursor</p>
+            <p className="top-sub">
+              {tutorialComplete
+                ? "World saved. Try Cursor IRL."
+                : `Drone cam on step ${currentStep}`}
             </p>
-          )}
-        </main>
-      </div>
+          </header>
+
+          <StepSlideshow
+            step={slideData}
+            currentStep={currentStep}
+            total={totalSteps}
+            complete={tutorialComplete}
+            onPrev={handleSlidePrev}
+            onNext={handleSlideNext}
+          />
+
+          <div className="chat-stage">
+            <ChatPanel
+              messages={messages}
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              disabled={busy}
+              scrollOnNewMessages={scrollChat}
+              placeholder={
+                tutorialComplete
+                  ? "/help · or restart below"
+                  : "start · /help · @App.tsx · /agent …"
+              }
+            />
+          </div>
+
+          <footer className="bottom-bar">
+            {tutorialComplete ? (
+              <>
+                <a className="cta-link" href="https://cursor.com" target="_blank" rel="noreferrer">
+                  Get Cursor
+                </a>
+                <button type="button" className="reset-btn" onClick={handleReset}>
+                  Respawn tutorial
+                </button>
+              </>
+            ) : (
+              <p className="bottom-hint">
+                Ooni preheated · chat completes each step · no pickaxe required
+              </p>
+            )}
+          </footer>
+        </div>
+      )}
     </div>
   );
 }
