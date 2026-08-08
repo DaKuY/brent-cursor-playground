@@ -292,7 +292,177 @@ code {
   color: var(--muted);
 }
 
-/* --- Tutorial mobile shell --- */
+/* --- Kid tutorial + choice bubbles --- */
+.tutorial-simple {
+  gap: 0.65rem;
+}
+
+.step-graphic {
+  width: 100%;
+  max-height: 160px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.kid-card {
+  background: rgba(12, 31, 61, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+}
+
+.kid-card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  color: var(--tremor-glow);
+}
+
+.kid-line {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.feature-line {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.choice-bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.choice-bubble {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 52px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  background: rgba(6, 13, 24, 0.85);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.choice-bubble:active {
+  transform: scale(0.98);
+}
+
+.choice-bubble.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(255, 107, 44, 0.35);
+  background: rgba(26, 74, 122, 0.5);
+}
+
+.choice-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.choice-group {
+  margin-top: 0.25rem;
+}
+
+.choice-group-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--pizza);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pick-hint {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.kid-reply {
+  text-align: center;
+  margin: 0;
+  padding: 0.65rem;
+  border-radius: 12px;
+  background: rgba(255, 149, 0, 0.12);
+  border: 1px solid rgba(255, 149, 0, 0.35);
+  color: #ffd699;
+  font-size: 0.92rem;
+  animation: pop-in 0.25s ease;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.adventure-result {
+  position: relative;
+  z-index: 1;
+  padding: 0.5rem 0 1rem;
+  text-align: center;
+}
+
+.result-eyebrow {
+  color: var(--mc-grass);
+  margin: 0 0 0.5rem;
+}
+
+.adventure-result h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+  color: var(--tremor-glow);
+}
+
+.result-scene {
+  margin-bottom: 0.75rem;
+}
+
+.result-svg {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.result-story {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0 0 0.75rem;
+  text-align: left;
+  background: rgba(12, 31, 61, 0.9);
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.result-cursor-tip {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+
+.result-cursor-tip a {
+  color: var(--tremor-glow);
+}
+
 .tutorial-mobile {
   position: relative;
   z-index: 1;

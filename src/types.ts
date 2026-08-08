@@ -1,24 +1,39 @@
-export type MessageRole = "user" | "assistant" | "system";
-
-export interface ChatMessage {
+export interface ChoiceOption {
   id: string;
-  role: MessageRole;
-  content: string;
-  timestamp: number;
+  label: string;
+  emoji: string;
+  kidReply: string;
 }
 
-export interface TutorialStep {
+export interface TutorialStepData {
   id: number;
   title: string;
-  headline: string;
-  lesson: string;
-  tryIt: string;
-  cursorWhy: string;
-  commandHints: string[];
+  kidLine: string;
+  cursorFeature: string;
+  graphic: "buddy" | "powers" | "mission";
+  choices: ChoiceOption[];
+  /** step 3 uses choiceGroups instead of flat choices */
+  choiceGroups?: {
+    key: keyof PlayerChoices;
+    prompt: string;
+    options: ChoiceOption[];
+  }[];
 }
 
-export interface AssistantReply {
-  messages: string[];
-  stepCompleted: boolean;
-  hint?: string;
+export interface PlayerChoices {
+  whatIsCursor: string;
+  superpower: string;
+  pizza: string;
+  drone: string;
+  minecraft: string;
 }
+
+export const EMPTY_CHOICES: PlayerChoices = {
+  whatIsCursor: "",
+  superpower: "",
+  pizza: "",
+  drone: "",
+  minecraft: "",
+};
+
+export const STORAGE_KEY = "brent-cursor-playground-v2";

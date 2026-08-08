@@ -1,191 +1,149 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChatPanel } from "./components/ChatPanel";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdventureResult } from "./components/AdventureResult";
+import { ChoiceBubbles } from "./components/ChoiceBubbles";
 import { LandingScreen } from "./components/LandingScreen";
 import { SceneBackdrop } from "./components/SceneBackdrop";
-import { StepSlideshow } from "./components/StepSlideshow";
+import { StepGraphic } from "./components/StepGraphic";
 import { TUTORIAL_STEPS } from "./data/tutorialSteps";
-import {
-  createMessage,
-  useTutorialProgress,
-} from "./hooks/useTutorialProgress";
-import {
-  getStepIntro,
-  getWelcomeMessages,
-  processMessage,
-} from "./lib/tutorialAssistant";
-import type { ChatMessage } from "./types";
+import { useTutorialProgress } from "./hooks/useTutorialProgress";
+import { EMPTY_CHOICES, type ChoiceOption, type PlayerChoices } from "./types";
 
-const SESSION_STARTED = "brent-playground-session-started";
+type Phase = "landing" | "tutorial" | "result";
 
 export default function App() {
-  const { currentStep, tutorialComplete, totalSteps, advance, reset } =
-    useTutorialProgress();
-  const [phase, setPhase] = useState<"landing" | "tutorial">(() =>
-    sessionStorage.getItem(SESSION_STARTED) ? "tutorial" : "landing",
-  );
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [scrollChat, setScrollChat] = useState(false);
-  const [slideStep, setSlideStep] = useState(currentStep);
-  const lastIntroStep = useRef(0);
+  const { currentStep, totalSteps, advance, reset, finish } = useTutorialProgress();
+  const [phase, setPhase] = useState<Phase>("landing");
+  const [choices, setChoices] = useState<PlayerChoices>({ ...EMPTY_CHOICES });
+  const [reply, setReply] = useState<string | null>(null);
+  const [step3Draft, setStep3Draft] = useState<Partial<PlayerChoices>>({});
 
-  const stepData = useMemo(
+  const step = useMemo(
     () => TUTORIAL_STEPS.find((s) => s.id === currentStep) ?? TUTORIAL_STEPS[0],
     [currentStep],
   );
 
-  const slideData = useMemo(
-    () => TUTORIAL_STEPS.find((s) => s.id === slideStep) ?? stepData,
-    [slideStep, stepData],
-  );
-
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [phase, currentStep]);
-
-  useEffect(() => {
-    if (phase !== "tutorial" || messages.length > 0) return;
-    if (!sessionStorage.getItem(SESSION_STARTED)) return;
-    const welcome = getWelcomeMessages().map((c) => createMessage("assistant", c));
-    const intro = getStepIntro(currentStep).map((c) => createMessage("assistant", c));
-    setMessages([...welcome, ...intro]);
-    lastIntroStep.current = currentStep;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- rehydrate once after refresh
-  }, []);
-
-  useEffect(() => {
-    setSlideStep(currentStep);
+    setReply(null);
+    if (currentStep === 3) setStep3Draft({});
   }, [currentStep]);
 
-  const pushAssistant = useCallback((lines: string[]) => {
-    setMessages((prev) => [
-      ...prev,
-      ...lines.map((c) => createMessage("assistant", c)),
-    ]);
-  }, []);
-
-  const beginTutorial = useCallback(() => {
-    sessionStorage.setItem(SESSION_STARTED, "1");
+  const beginTutorial = () => {
     setPhase("tutorial");
-    const welcome = getWelcomeMessages().map((c) => createMessage("assistant", c));
-    const intro = getStepIntro(1).map((c) => createMessage("assistant", c));
-    setMessages([...welcome, ...intro]);
-    lastIntroStep.current = 1;
+    setChoices({ ...EMPTY_CHOICES });
+    setStep3Draft({});
+    setReply(null);
     window.scrollTo(0, 0);
-  }, []);
+  };
 
-  useEffect(() => {
-    if (phase !== "tutorial" || tutorialComplete) return;
-    if (lastIntroStep.current === currentStep) return;
-    lastIntroStep.current = currentStep;
-    pushAssistant(getStepIntro(currentStep));
-  }, [currentStep, tutorialComplete, phase, pushAssistant]);
-
-  const handleSend = useCallback(() => {
-    const text = input.trim();
-    if (!text || busy) return;
-
-    setScrollChat(true);
-    setMessages((prev) => [...prev, createMessage("user", text)]);
-    setInput("");
-    setBusy(true);
-
-    window.setTimeout(() => {
-      const stepForChat = tutorialComplete ? 10 : currentStep;
-      const result = processMessage(text, stepForChat);
-      if (result.advance) {
-        advance();
-      } else {
-        result.messages.forEach((block) => {
-          setMessages((prev) => [...prev, createMessage("assistant", block)]);
-        });
-        if (result.hint) {
-          setMessages((prev) => [...prev, createMessage("system", result.hint!)]);
-        }
-        if (result.stepCompleted && !tutorialComplete) {
-          window.setTimeout(() => advance(), 600);
-        }
-      }
-      setBusy(false);
-    }, 350);
-  }, [input, busy, tutorialComplete, currentStep, advance]);
-
-  const handleReset = () => {
+  const handleRestart = () => {
     reset();
-    sessionStorage.removeItem(SESSION_STARTED);
-    setMessages([]);
-    setScrollChat(false);
+    setChoices({ ...EMPTY_CHOICES });
+    setStep3Draft({});
+    setReply(null);
     setPhase("landing");
     window.scrollTo(0, 0);
   };
 
-  const handleSlidePrev = () => {
-    setSlideStep((s) => Math.max(1, s - 1));
+  const goNext = useCallback(
+    (nextChoices: PlayerChoices) => {
+      setReply(null);
+      if (currentStep >= 3) {
+        setChoices(nextChoices);
+        finish();
+        setPhase("result");
+        return;
+      }
+      advance();
+    },
+    [advance, currentStep, finish],
+  );
+
+  const pickStep1or2 = (opt: ChoiceOption) => {
+    const key = currentStep === 1 ? "whatIsCursor" : "superpower";
+    const next = { ...choices, [key]: opt.id };
+    setChoices(next);
+    setReply(opt.kidReply);
+    window.setTimeout(() => goNext(next), 700);
   };
 
-  const handleSlideNext = () => {
-    setSlideStep((s) => Math.min(totalSteps, s + 1));
+  const pickStep3 = (key: keyof PlayerChoices, opt: ChoiceOption) => {
+    const draft = { ...step3Draft, [key]: opt.id };
+    setStep3Draft(draft);
+    setReply(opt.kidReply);
+
+    const complete =
+      draft.pizza && draft.drone && draft.minecraft;
+    if (complete) {
+      const next = {
+        ...choices,
+        pizza: draft.pizza!,
+        drone: draft.drone!,
+        minecraft: draft.minecraft!,
+      };
+      setChoices(next);
+      window.setTimeout(() => goNext(next), 800);
+    }
   };
+
+  const step3Ready =
+    Boolean(step3Draft.pizza) &&
+    Boolean(step3Draft.drone) &&
+    Boolean(step3Draft.minecraft);
 
   return (
     <div className="app-shell">
       <SceneBackdrop />
 
-      {phase === "landing" ? (
-        <LandingScreen onStart={beginTutorial} />
-      ) : (
-        <div className="tutorial-mobile">
+      {phase === "landing" && <LandingScreen onStart={beginTutorial} />}
+
+      {phase === "tutorial" && (
+        <div className="tutorial-mobile tutorial-simple">
           <header className="top-bar">
-            <p className="top-title mc-pixel">Tremor × Cursor</p>
-            <p className="top-sub">
-              {tutorialComplete
-                ? "World saved. Try Cursor IRL."
-                : `Drone cam on step ${currentStep}`}
-            </p>
+            <p className="top-title mc-pixel">Step {currentStep} / {totalSteps}</p>
           </header>
 
-          <StepSlideshow
-            step={slideData}
-            currentStep={currentStep}
-            total={totalSteps}
-            complete={tutorialComplete}
-            onPrev={handleSlidePrev}
-            onNext={handleSlideNext}
-          />
+          <StepGraphic kind={step.graphic} />
 
-          <div className="chat-stage">
-            <ChatPanel
-              messages={messages}
-              input={input}
-              onInputChange={setInput}
-              onSend={handleSend}
-              disabled={busy}
-              scrollOnNewMessages={scrollChat}
-              placeholder={
-                tutorialComplete
-                  ? "/help · or restart below"
-                  : "start · /help · @App.tsx · /agent …"
+          <article className="kid-card">
+            <h2>{step.title}</h2>
+            <p className="kid-line">{step.kidLine}</p>
+            <p className="feature-line">{step.cursorFeature}</p>
+          </article>
+
+          {step.id < 3 && (
+            <ChoiceBubbles
+              options={step.choices}
+              selectedId={
+                currentStep === 1 ? choices.whatIsCursor : choices.superpower
               }
+              onSelect={pickStep1or2}
             />
-          </div>
+          )}
 
-          <footer className="bottom-bar">
-            {tutorialComplete ? (
-              <>
-                <a className="cta-link" href="https://cursor.com" target="_blank" rel="noreferrer">
-                  Get Cursor
-                </a>
-                <button type="button" className="reset-btn" onClick={handleReset}>
-                  Respawn tutorial
-                </button>
-              </>
-            ) : (
-              <p className="bottom-hint">
-                Ooni preheated · chat completes each step · no pickaxe required
-              </p>
-            )}
-          </footer>
+          {step.id === 3 &&
+            step.choiceGroups?.map((group) => (
+              <div key={group.key} className="choice-group">
+                <p className="choice-group-label">{group.prompt}</p>
+                <ChoiceBubbles
+                  options={group.options}
+                  selectedId={step3Draft[group.key] as string | undefined}
+                  onSelect={(opt) => pickStep3(group.key, opt)}
+                />
+              </div>
+            ))}
+
+          {step.id === 3 && !step3Ready && (
+            <p className="pick-hint">Pick one bubble in each row to launch!</p>
+          )}
+
+          {reply && <p className="kid-reply">{reply}</p>}
+        </div>
+      )}
+
+      {phase === "result" && (
+        <div className="tutorial-mobile">
+          <AdventureResult choices={choices} onRestart={handleRestart} />
         </div>
       )}
     </div>

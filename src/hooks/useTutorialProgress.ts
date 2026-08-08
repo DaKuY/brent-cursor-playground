@@ -1,37 +1,35 @@
 import { useCallback, useEffect, useState } from "react";
-import { STORAGE_KEY, TUTORIAL_STEPS } from "../data/tutorialSteps";
-import type { ChatMessage } from "../types";
-
-function loadStep(): number {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return 1;
-    const parsed = JSON.parse(raw) as { step: number; completed?: boolean };
-    if (parsed.completed) return 11;
-    return Math.min(Math.max(parsed.step, 1), 10);
-  } catch {
-    return 1;
-  }
-}
-
-function saveProgress(step: number, completed: boolean) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, completed }));
-}
+import { TUTORIAL_STEPS } from "../data/tutorialSteps";
+import { STORAGE_KEY } from "../types";
 
 export function useTutorialProgress() {
-  const [currentStep, setCurrentStep] = useState(loadStep);
-  const [tutorialComplete, setTutorialComplete] = useState(() => loadStep() > 10);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [tutorialComplete, setTutorialComplete] = useState(false);
 
   useEffect(() => {
-    if (tutorialComplete) saveProgress(10, true);
-    else saveProgress(currentStep, false);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { step?: number; completed?: boolean };
+      if (parsed.completed) setTutorialComplete(true);
+      else if (parsed.step) setCurrentStep(Math.min(Math.max(parsed.step, 1), 3));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ step: currentStep, completed: tutorialComplete }),
+    );
   }, [currentStep, tutorialComplete]);
 
   const advance = useCallback(() => {
     setCurrentStep((s) => {
-      if (s >= 10) {
+      if (s >= 3) {
         setTutorialComplete(true);
-        return 11;
+        return 3;
       }
       return s + 1;
     });
@@ -43,18 +41,16 @@ export function useTutorialProgress() {
     setTutorialComplete(false);
   }, []);
 
+  const finish = useCallback(() => {
+    setTutorialComplete(true);
+  }, []);
+
   return {
-    currentStep: Math.min(currentStep, 10),
+    currentStep,
     tutorialComplete,
     totalSteps: TUTORIAL_STEPS.length,
     advance,
     reset,
-    setTutorialComplete,
+    finish,
   };
-}
-
-let msgCounter = 0;
-export function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
-  msgCounter += 1;
-  return { id: `m-${msgCounter}`, role, content, timestamp: Date.now() };
 }
