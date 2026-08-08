@@ -34,7 +34,7 @@ export default function App() {
     <div className="app">
       <header className="hero">
         <p className="eyebrow">Cursor Playground</p>
-        <h1>Learn Cursor by building</h1>
+        <h1>Brent&apos;s Cursor Playground</h1>
         <p className="subtitle">
           A tiny React app with guided exercises. Use Chat, inline edits, and Agent
           on real files—not toy snippets.
