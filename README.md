@@ -29,15 +29,13 @@ Open `http://localhost:5173`.
 - `npm run preview` — preview `dist/`
 - `./scripts/publish-github.sh` — create/push to GitHub (needs `gh auth` or `GH_TOKEN`)
 
-## Publish to GitHub
+## Publish & share
 
-```bash
-chmod +x scripts/publish-github.sh
-./scripts/publish-github.sh brent-cursor-playground
-```
+- **Live site:** https://dakuy.github.io/brent-cursor-playground/
+- **Repo:** https://github.com/DaKuY/brent-cursor-playground
+- **Pages deploy:** pushes to `main` run [Deploy public site](.github/workflows/deploy-pages.yml)
 
-Then enable **Settings → Pages → GitHub Actions** for a public site at  
-`https://<username>.github.io/brent-cursor-playground/`.
+See **PUBLIC_LINK.md** for details.
 
 ## License
 

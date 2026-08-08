@@ -1,42 +1,35 @@
 # Share this app with anyone
 
-## Live link (while Cloud Agent is running)
+## Permanent link (live)
 
-**https://brent-cursor-playground.loca.lt**
+**https://dakuy.github.io/brent-cursor-playground/**
 
-Open in any phone or browser. If LocalTunnel shows a warning page, tap **Continue** once.
-
-This link works only while the agent session and tunnel are active. For a **permanent** link, use GitHub Pages or Netlify below.
+Hosted on **GitHub Pages**. Updates automatically when `main` is pushed (via `.github/workflows/deploy-pages.yml`).
 
 ---
 
-## Permanent link (recommended): GitHub Pages
+## GitHub repository
 
-1. Create a new **public** repository on GitHub (for example `brent-cursor-playground`).
-2. Push this project to that repo (`main` branch).
-3. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-4. Push again (or run the **Deploy public site** workflow manually).
-
-Your site will be at:
-
-`https://<your-github-username>.github.io/<repo-name>/`
-
-Example: `https://drewe927.github.io/brent-cursor-playground/`
+**https://github.com/DaKuY/brent-cursor-playground**
 
 ---
 
-## Permanent link: Netlify
+## Temporary dev link (Cloud Agent only)
 
-1. Sign up at [netlify.com](https://www.netlify.com).
-2. **Add new site → Import an existing project** (connect GitHub), or drag the `dist` folder after `npm run build`.
-3. Build command: `npm run build` · Publish directory: `dist`
-
-Netlify gives you a stable `*.netlify.app` URL you can share.
+While a Cloud Agent session is running, a LocalTunnel URL may also be used for testing. Prefer the GitHub Pages link above for sharing.
 
 ---
 
-## Permanent link: Vercel
+## Local development
 
-1. Sign up at [vercel.com](https://vercel.com).
-2. Import this repo; framework preset **Vite**.
-3. Deploy — you get a stable `*.vercel.app` URL.
+```bash
+npm install
+npm run dev
+```
+
+Build matches Pages:
+
+```bash
+VITE_BASE=/brent-cursor-playground/ npm run build
+npm run preview
+```
