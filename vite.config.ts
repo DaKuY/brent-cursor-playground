@@ -6,5 +6,10 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    // Allow Cloudflare/ngrok-style tunnels (needed for iPhone over HTTPS URL).
+    allowedHosts: true,
+    hmr: {
+      clientPort: 443,
+    },
   },
 });
