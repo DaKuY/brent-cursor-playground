@@ -1,16 +1,24 @@
-export type TaskTag = "chat" | "context" | "edit" | "agent" | "custom";
+export type MessageRole = "user" | "assistant" | "system";
 
-export interface Task {
+export interface ChatMessage {
   id: string;
-  title: string;
-  done: boolean;
-  tag: TaskTag;
+  role: MessageRole;
+  content: string;
+  timestamp: number;
 }
 
-export interface Exercise {
-  id: string;
+export interface TutorialStep {
+  id: number;
   title: string;
-  description: string;
-  promptHint: string;
-  fileHint?: string;
+  headline: string;
+  lesson: string;
+  tryIt: string;
+  cursorWhy: string;
+  commandHints: string[];
+}
+
+export interface AssistantReply {
+  messages: string[];
+  stepCompleted: boolean;
+  hint?: string;
 }
