@@ -1,6 +1,6 @@
-# Cursor Playground
+# Brent's Cursor Playground
 
-A small **React + TypeScript + Vite** app meant for learning Cursor—not a production template, but a real codebase you can break and fix with AI.
+A mobile-friendly **React + Vite** demo that teaches **Cursor** in **3 tap-through steps** (built for kids ~10+, fun Tremor / Ooni / Minecraft theme). Choices at the end build a custom “mission” story.
 
 ## Quick start
 
@@ -9,35 +9,36 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`).
+Open `http://localhost:5173`.
 
-## What’s in the repo
+## What's in the repo
 
 | Path | Purpose |
 |------|---------|
-| `src/App.tsx` | Main layout and task state |
-| `src/components/` | UI pieces to refactor or extend |
-| `src/data/exercises.ts` | Copy-paste prompt ideas for Chat/Agent |
-| `src/lib/stats.ts` | Small utility—good for Tab completion practice |
-| `CURSOR_TOUR.md` | Step-by-step first session |
-
-## Suggested first hour
-
-1. Read **CURSOR_TOUR.md** and work through exercises 1–4.
-2. Check off tasks in the app as you complete each exercise.
-3. Pick one **stretch goal** from the tour and use **Agent** to implement it.
+| `src/App.tsx` | Landing → 3 steps → result flow |
+| `src/data/tutorialSteps.ts` | Step copy and bubble choices |
+| `src/lib/buildMission.ts` | End card from player choices |
+| `src/components/` | Graphics, bubbles, backdrop |
+| `PUBLIC_LINK.md` | Share via tunnel, GitHub Pages, Netlify, Vercel |
+| `.github/workflows/deploy-pages.yml` | Auto-deploy to GitHub Pages |
 
 ## Scripts
 
-- `npm run dev` — development server with hot reload
-- `npm run build` — production build + TypeScript check
-- `npm run preview` — serve the production build locally
+- `npm run dev` — local dev server
+- `npm run build` — production build
+- `npm run preview` — preview `dist/`
+- `./scripts/publish-github.sh` — create/push to GitHub (needs `gh auth` or `GH_TOKEN`)
 
-## Stretch ideas (ask Agent)
+## Publish to GitHub
 
-- Persist tasks in `localStorage`
-- Add keyboard shortcuts (e.g. mark all done)
-- Light/dark theme toggle
-- Unit tests for `src/lib/stats.ts`
+```bash
+chmod +x scripts/publish-github.sh
+./scripts/publish-github.sh brent-cursor-playground
+```
 
-Have fun—this project is yours to change.
+Then enable **Settings → Pages → GitHub Actions** for a public site at  
+`https://<username>.github.io/brent-cursor-playground/`.
+
+## License
+
+Use and modify freely for learning and demos.
